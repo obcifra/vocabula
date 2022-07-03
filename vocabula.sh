@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+mkdir -p ./cache
+
+tmp_liber=$(mktemp -d /tmp/vocabula.XXXXXX)
+
 if [ -z "$1" ]; then
   echo "Error: Scribe numerum psalmi!"
   exit;
@@ -7,15 +11,51 @@ fi
 
 psalter="https://raw.githubusercontent.com/DivinumOfficium/divinum-officium/master/"
 psalmum="${psalter}/web/www/horas/Latin/psalms/Psalm${1}.txt"
+scripturae=""
 
-scripturae=$(curl -sL "${psalmum}")
-vocabula=$(echo ${scripturae} | sed 's/[[:punct:][:digit:]]//g' \
-                              | tr ' ' '\n' \
-                              | sort -du)
+if [[ ! -f "./cache/${1}.in" ]]; then
+  scripturae=$(curl -sL "${psalmum}")
+else
+  scripturae=$(cat "./cache/${1}.in")
+fi
 
-tmp_liber=$(mktemp /tmp/vocabula.XXXXXX)
+### Vocabula
 
-echo ${vocabula} > ${tmp_liber}
-./bin/meanings ${tmp_liber} | \
-  awk '/\[[A-Z]+\]/ {print $0; getline; printf "\t%s\n\n",$0}'
-rm "${tmp_liber}"
+echo ${scripturae} | sed 's/[[:punct:][:digit:]]//g' \
+                   | tr ' ' '\n' \
+                   | sed '/^$/d' \
+                   | sed '/^a$/d' \
+                   | sort -du \
+                   > ${tmp_liber}/vocabula
+
+vocabula=$(cat ${tmp_liber}/vocabula)
+
+#readarray -t arr_vocabula <<< "$vocabula"
+readarray -t arr_vocabula < <(printf '%s' "$vocabula")
+
+### Definitiones
+
+docker run -v ${tmp_liber}:/data --rm -it words:latest meanings data/vocabula \
+                   | sed 's/^*/@/g' \
+                   | sed 's/^[[:space:]]*$/@/g' \
+                   > ${tmp_liber}/definitiones
+
+definitiones=$(cat ${tmp_liber}/definitiones)
+
+#readarray -d '@' -t arr_definitiones <<< "$definitiones"
+readarray -td '@' arr_definitiones < <(printf '%s' "$definitiones")
+
+### Glossarium
+
+for i in "${!arr_vocabula[@]}"; do
+  printf "\n{%s}\n<<\n%s\n>>" "${arr_vocabula[$i]}" "${arr_definitiones[$i]}" \
+    >> ${tmp_liber}/glossarium
+done
+
+gawk -f scriptum.awk \
+     -v psalmum=${1} \
+     ${tmp_liber}/glossarium > ${tmp_liber}/liber
+
+groff -ms -Tpdf ${tmp_liber}/liber > liber.pdf
+
+rm -rf "${tmp_liber}"
