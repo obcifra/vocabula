@@ -30,7 +30,6 @@ echo ${scripturae} | sed 's/[[:punct:][:digit:]]//g' \
 
 vocabula=$(cat ${tmp_liber}/vocabula)
 
-#readarray -t arr_vocabula <<< "$vocabula"
 readarray -t arr_vocabula < <(printf '%s' "$vocabula")
 
 ### Definitiones
@@ -42,7 +41,6 @@ docker run -v ${tmp_liber}:/data --rm -it words:latest meanings data/vocabula \
 
 definitiones=$(cat ${tmp_liber}/definitiones)
 
-#readarray -d '@' -t arr_definitiones <<< "$definitiones"
 readarray -td '@' arr_definitiones < <(printf '%s' "$definitiones")
 
 ### Glossarium
