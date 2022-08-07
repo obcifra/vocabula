@@ -34,10 +34,17 @@ readarray -t arr_vocabula < <(printf '%s' "$vocabula")
 
 ### Definitiones
 
-docker run -v ${tmp_liber}:/data --rm -it words:latest meanings data/vocabula \
+if [[ -z "${CONTAINER_RUNTIME}" ]]; then
+  docker run -v ${tmp_liber}:/data --rm -it words:latest meanings data/vocabula \
                    | sed 's/^*/@/g' \
                    | sed 's/^[[:space:]]*$/@/g' \
                    > ${tmp_liber}/definitiones
+else
+  meanings ${tmp_liber}/vocabula \
+                   | sed 's/^*/@/g' \
+                   | sed 's/^[[:space:]]*$/@/g' \
+                   > ${tmp_liber}/definitiones
+fi
 
 definitiones=$(cat ${tmp_liber}/definitiones)
 
@@ -54,6 +61,6 @@ gawk -f scriptum.awk \
      -v psalmum=${1} \
      ${tmp_liber}/glossarium > ${tmp_liber}/liber
 
-groff -ms -Tpdf ${tmp_liber}/liber > liber.pdf
+groff -ms -Tpdf ${tmp_liber}/liber > psalmum_${1}.pdf
 
 rm -rf "${tmp_liber}"
