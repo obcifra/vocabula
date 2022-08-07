@@ -10,10 +10,15 @@ jobs:
     container:
       image: ghcr.io/lenzomj/words
       env:
-        CONTAINER_RUNTIME: true
+        RUNTIME: container
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.github_token }}
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+
       - name: Test
-        run: words -version
+        run: |
+          ./vocabula.sh 1
+        shell: bash
