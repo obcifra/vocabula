@@ -1,0 +1,19 @@
+name: Build
+
+on:
+  pull_request
+
+jobs:
+  fabricator:
+    name: description
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/lenzomj/words
+      env:
+        CONTAINER_RUNTIME: true
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.github_token }}
+    steps:
+      - name: Test
+        run: words -version
