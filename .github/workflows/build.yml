@@ -4,8 +4,30 @@ on:
   pull_request
 
 jobs:
-  fabricator:
-    name: description
+  arcessitor:
+    name: Arcessitor
+    runs-on: ubuntu-latest
+    steps:
+      - name: Para instrumenta
+        uses: actions/checkout@v2
+
+      - name: Acci et munda vocabula
+        run: |
+          arr_psalma=( 1 2 3 )
+          for p in "${!arr_psalma[@]}"; do
+            ./acci.sh ${p} | ./munda.sh > vocabula_${p}
+          done
+          tar -cvzf vocabula.tar.gz vocabula_*
+
+      - name: Conserva vocabula
+        uses: actions/upload-artifact@v3
+        with:
+          name: vocabula
+          path: vocabula.tar.gz
+
+  translator:
+    name: Translator
+    needs: arcessitor
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/lenzomj/words
@@ -15,10 +37,48 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.github_token }}
     steps:
-      - name: Check out repository
+      - name: Para instrumenta
         uses: actions/checkout@v2
 
-      - name: Test
+      - name: Para vocabula
+        uses: actions/download-artifact@v3
+        with:
+          name: vocabula
+
+      - name: Traferre vocabula
         run: |
-          ./vocabula.sh 1
+          tar -xzf vocabula.tar.gz
+          arr_psalma=( 1 2 3 )
+          for p in "${!arr_psalma[@]}"; do
+            ./traferre.sh vocabula_${p} > definitiones_${p}
+          done
+          tar -cvzf glossarium.tar.gz vocabula_* definitiones_${p}
+        shell: bash
+
+      - name: Conserva glossarium
+        uses: actions/upload-artifact@v3
+        with:
+          name: glossarium
+          path: glossarium.tar.gz
+
+  fabricator:
+    name: Fabricator
+    needs: translator
+    runs-on: ubuntu-latest
+    steps:
+      - name: Para instrumenta
+        uses: actions/checkout@v2
+
+      - name: Para glossarium
+        uses: actions/download-artifact@v3
+        with:
+          name: glossarium
+
+      - name: Conpara vocabula et definitiones
+        run: |
+          tar -xzf glossarium.tar.gz
+          arr_psalma=( 1 2 3 )
+          for p in "${!arr_psalma[@]}"; do
+            ./conpara.sh ${p} vocabula_${p} definitiones_${p}
+          done
         shell: bash
