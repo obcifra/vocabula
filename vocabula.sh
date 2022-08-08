@@ -9,51 +9,16 @@ if [ -z "$1" ]; then
   exit;
 fi
 
-psalter="https://raw.githubusercontent.com/DivinumOfficium/divinum-officium/master/"
-psalmum="${psalter}/web/www/horas/Latin/psalms/Psalm${1}.txt"
-scripturae=""
-
-if [[ ! -f "./cache/${1}.in" ]]; then
-  scripturae=$(curl -sL "${psalmum}")
-else
-  scripturae=$(cat "./cache/${1}.in")
-fi
-
 ### Vocabula
 
-echo ${scripturae} | sed 's/[[:punct:][:digit:]]//g' \
-                   | tr ' ' '\n' \
-                   | sed '/^$/d' \
-                   | sed '/^a$/d' \
-                   | sort -du \
-                   > ${tmp_liber}/vocabula
-
-vocabula=$(cat ${tmp_liber}/vocabula)
-
-readarray -t arr_vocabula < <(printf '%s' "$vocabula")
+./acci.sh ${1} | ./munda.sh > ${tmp_liber}/vocabula
 
 ### Definitiones
 
-docker run -v ${tmp_liber}:/data --rm -it words:latest meanings data/vocabula \
-                   | sed 's/^*/@/g' \
-                   | sed 's/^[[:space:]]*$/@/g' \
-                   > ${tmp_liber}/definitiones
-
-definitiones=$(cat ${tmp_liber}/definitiones)
-
-readarray -td '@' arr_definitiones < <(printf '%s' "$definitiones")
+./traferre.sh ${tmp_liber}/vocabula > ${tmp_liber}/definitiones
 
 ### Glossarium
 
-for i in "${!arr_vocabula[@]}"; do
-  printf "\n{%s}\n<<\n%s\n>>" "${arr_vocabula[$i]}" "${arr_definitiones[$i]}" \
-    >> ${tmp_liber}/glossarium
-done
-
-gawk -f scriptum.awk \
-     -v psalmum=${1} \
-     ${tmp_liber}/glossarium > ${tmp_liber}/liber
-
-groff -ms -Tpdf ${tmp_liber}/liber > liber.pdf
+./conpara.sh ${1} ${tmp_liber}/vocabula ${tmp_liber}/definitiones
 
 rm -rf "${tmp_liber}"

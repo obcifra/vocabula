@@ -1,0 +1,97 @@
+name: Build
+
+on:
+  pull_request
+
+jobs:
+  arcessitor:
+    name: Arcessitor
+    runs-on: ubuntu-latest
+    steps:
+      - name: Para instrumenta
+        uses: actions/checkout@v2
+
+      - name: Acci et munda vocabula
+        run: |
+          arr_psalma=( 1 2 3 )
+          for p in "${arr_psalma[@]}"; do
+            ./acci.sh ${p} | ./munda.sh > vocabula_${p}
+          done
+          tar -cvzf vocabula.tar.gz vocabula_*
+
+      - name: Conserva vocabula
+        uses: actions/upload-artifact@v3
+        with:
+          name: vocabula
+          path: vocabula.tar.gz
+
+  translator:
+    name: Translator
+    needs: arcessitor
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/lenzomj/words
+      env:
+        CONTAINER_RUNTIME: true
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.github_token }}
+    steps:
+      - name: Para instrumenta
+        uses: actions/checkout@v2
+
+      - name: Para vocabula
+        uses: actions/download-artifact@v3
+        with:
+          name: vocabula
+
+      - name: Traferre vocabula
+        run: |
+          tar -xzf vocabula.tar.gz
+          arr_psalma=( 1 2 3 )
+          for p in "${arr_psalma[@]}"; do
+            ./traferre.sh vocabula_${p} > definitiones_${p}
+          done
+          tar -cvzf glossarium.tar.gz vocabula_* definitiones_*
+        shell: bash
+
+      - name: Conserva glossarium
+        uses: actions/upload-artifact@v3
+        with:
+          name: glossarium
+          path: glossarium.tar.gz
+
+  fabricator:
+    name: Fabricator
+    needs: translator
+    runs-on: ubuntu-latest
+    steps:
+      - name: Para instrumenta
+        uses: actions/checkout@v2
+
+      - name: Para cetera
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y groff gawk
+        shell: bash
+
+      - name: Para glossarium
+        uses: actions/download-artifact@v3
+        with:
+          name: glossarium
+
+      - name: Conpara vocabula et definitiones
+        run: |
+          tar -xzf glossarium.tar.gz
+          arr_psalma=( 1 2 3 )
+          for p in "${arr_psalma[@]}"; do
+            ./conpara.sh ${p} vocabula_${p} definitiones_${p}
+          done
+          tar -cvzf psalma.tar.gz psalmum_*
+        shell: bash
+
+      - name: Conserva psalma
+        uses: actions/upload-artifact@v3
+        with:
+          name: psalma
+          path: psalma.tar.gz
