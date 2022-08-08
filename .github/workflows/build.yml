@@ -32,7 +32,7 @@ jobs:
     container:
       image: ghcr.io/lenzomj/words
       env:
-        RUNTIME: container
+        CONTAINER_RUNTIME: true
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.github_token }}
@@ -68,6 +68,12 @@ jobs:
     steps:
       - name: Para instrumenta
         uses: actions/checkout@v2
+
+      - name: Para cetera
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y groff gawk
+        shell: bash
 
       - name: Para glossarium
         uses: actions/download-artifact@v3
