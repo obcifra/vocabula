@@ -14,7 +14,7 @@ jobs:
       - name: Acci et munda vocabula
         run: |
           arr_psalma=( 1 2 3 )
-          for p in "${!arr_psalma[@]}"; do
+          for p in "${arr_psalma[@]}"; do
             ./acci.sh ${p} | ./munda.sh > vocabula_${p}
           done
           tar -cvzf vocabula.tar.gz vocabula_*
@@ -49,10 +49,10 @@ jobs:
         run: |
           tar -xzf vocabula.tar.gz
           arr_psalma=( 1 2 3 )
-          for p in "${!arr_psalma[@]}"; do
+          for p in "${arr_psalma[@]}"; do
             ./traferre.sh vocabula_${p} > definitiones_${p}
           done
-          tar -cvzf glossarium.tar.gz vocabula_* definitiones_${p}
+          tar -cvzf glossarium.tar.gz vocabula_* definitiones_*
         shell: bash
 
       - name: Conserva glossarium
@@ -78,7 +78,14 @@ jobs:
         run: |
           tar -xzf glossarium.tar.gz
           arr_psalma=( 1 2 3 )
-          for p in "${!arr_psalma[@]}"; do
+          for p in "${arr_psalma[@]}"; do
             ./conpara.sh ${p} vocabula_${p} definitiones_${p}
           done
+          tar -cvzf psalma.tar.gz psalmum_*
         shell: bash
+
+      - name: Conserva psalma
+        uses: actions/upload-artifact@v3
+        with:
+          name: psalma
+          path: psalma.tar.gz
